@@ -1,5 +1,6 @@
 import re
 from datasets import load_dataset
+from sklearn.model_selection import train_test_split
 
 def extract_category(question: str) -> str:
     match = re.search(r'related to \"(.+?)\"', question)
@@ -40,6 +41,12 @@ def filter_categories(texts, labels):
 
     return filtered_texts, filtered_labels
 
+def split_dataset(texts, labels):
+    train_texts, val_texts, train_labels, val_labels = train_test_split(
+        texts, labels, test_size=0.2, stratify=labels, random_state=42
+    )
+    return train_texts, val_texts, train_labels, val_labels
+
 if __name__ == "__main__":
     test_question = 'Highlight the parts (if any) of this contract related to "Document Name" that should be reviewed by a lawyer.'
     print(extract_category(test_question))
@@ -51,3 +58,7 @@ if __name__ == "__main__":
     from collections import Counter
     print(f"\nFinal dataset size: {len(texts)}")
     print(Counter(labels))
+    train_texts, val_texts, train_labels, val_labels = split_dataset(texts, labels)
+
+    print(f"\nTrain size: {len(train_texts)}")
+    print(f"Validation size: {len(val_texts)}")
