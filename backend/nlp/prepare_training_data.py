@@ -1,6 +1,7 @@
 import re
 from datasets import load_dataset
 from sklearn.model_selection import train_test_split
+import json
 
 def extract_category(question: str) -> str:
     match = re.search(r'related to \"(.+?)\"', question)
@@ -47,6 +48,13 @@ def split_dataset(texts, labels):
     )
     return train_texts, val_texts, train_labels, val_labels
 
+def save_split(train_texts, val_texts, train_labels, val_labels, out_dir="data"):
+    with open(f"{out_dir}/train.json", "w") as f:
+        json.dump({"texts": train_texts, "labels": train_labels}, f)
+
+    with open(f"{out_dir}/val.json", "w") as f:
+        json.dump({"texts": val_texts, "labels": val_labels}, f)
+
 if __name__ == "__main__":
     test_question = 'Highlight the parts (if any) of this contract related to "Document Name" that should be reviewed by a lawyer.'
     print(extract_category(test_question))
@@ -62,3 +70,5 @@ if __name__ == "__main__":
 
     print(f"\nTrain size: {len(train_texts)}")
     print(f"Validation size: {len(val_texts)}")
+    save_split(train_texts, val_texts, train_labels, val_labels)
+    print("\nSaved train.json and val.json to data/")
