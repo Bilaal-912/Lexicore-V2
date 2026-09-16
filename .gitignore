@@ -5,3 +5,4 @@ __pycache__/
 *.db
 data/*.pdf
 backend/nlp/model/
+
