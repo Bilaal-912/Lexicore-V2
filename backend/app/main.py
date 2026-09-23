@@ -8,7 +8,8 @@ from backend.nlp.pipeline_test import classify_clause, is_boilerplate
 from backend.nlp.risk_scorer import get_risk_level
 from backend.nlp.summarizer import summarize_text
 from backend.db.crud import save_contract
-
+from backend.db.crud import Session
+from backend.db.models import Contract
 
 UPLOAD_DIR = "data/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -60,3 +61,49 @@ def upload_contract(file: UploadFile = File(...)):
         "summary": summary_text,
         "entities": entities
     }
+@app.get("/contracts/{contract_id}")
+def get_contract(contract_id: int):
+    session = Session()
+    contract = session.query(Contract).filter_by(contract_id=contract_id).first()
+
+    if contract is None:
+        session.close()
+        return {"error": "Contract not found"}
+
+    clauses_data = []
+    for clause in contract.clauses:
+        clauses_data.append({
+            "text": clause.clause_text,
+            "category": clause.clause_type,
+            "risk": clause.risk_score.risk_level if clause.risk_score else None
+        })
+
+    summary_text = contract.summaries[0].summary_text if contract.summaries else None
+
+    session.close()
+
+    return {
+        "contract_id": contract.contract_id,
+        "filename": contract.filename,
+        "upload_date": contract.upload_date,
+        "clause_count": len(clauses_data),
+        "clauses": clauses_data,
+        "summary": summary_text
+    }
+@app.get("/contracts")
+def list_contracts():
+    session = Session()
+    contracts = session.query(Contract).all()
+
+    result = [
+        {
+            "contract_id": c.contract_id,
+            "filename": c.filename,
+            "upload_date": c.upload_date,
+            "clause_count": len(c.clauses)
+        }
+        for c in contracts
+    ]
+
+    session.close()
+    return result
